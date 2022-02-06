@@ -1,12 +1,7 @@
-#include <pcl_one.h>
+#include <pcl_two.h>
 
 
 
-pcl::PCLPointCloud2::Ptr ProcessPointClouds::cloud_blob(new pcl::PCLPointCloud2)  ;
-
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr ProcessPointClouds::_colour_point_cloud(new pcl::PointCloud<pcl::PointXYZRGB>) ;
-
-// static pcl::visualization::CloudViewer ProcessPointClouds::viewer ;
 
 
 ProcessPointClouds::ProcessPointClouds(ros::NodeHandle *nodehandle):nh_(*nodehandle){
@@ -18,16 +13,9 @@ ProcessPointClouds::ProcessPointClouds(ros::NodeHandle *nodehandle):nh_(*nodehan
 
     Sub_Point_Cloud_Data = nh_.subscribe("/os_cloud_node/points",10,&ProcessPointClouds::Subscribe_Point_Cloud,this);
 
-   
-
-
 }
 
 
-ProcessPointClouds::ProcessPointClouds( ){
-    ROS_INFO(" Default Constructor Initialized");
-
-}
 
 
 ProcessPointClouds::~ProcessPointClouds(){
@@ -39,15 +27,15 @@ void ProcessPointClouds::Subscribe_Point_Cloud(const sensor_msgs::PointCloud2Con
 
     ROS_INFO("Subscriber Callback Called");
 
-    sensor_msgs::PointCloud2 output;
+    
 
-    DownSampling_Filter(msg);
+    PassThrough_Filter(msg);
 
 }
 
-void ProcessPointClouds::DownSampling_Filter(const sensor_msgs::PointCloud2ConstPtr &Point_Cloud){
+void ProcessPointClouds::PassThrough_Filter(const sensor_msgs::PointCloud2ConstPtr &Point_Cloud){
 
-    ROS_INFO("Downsampling Filter Called");
+    ROS_INFO("Pass Through Filter Called");
 
     /*
       Container for original & filtered data
@@ -62,21 +50,35 @@ void ProcessPointClouds::DownSampling_Filter(const sensor_msgs::PointCloud2Const
     
     sensor_msgs::PointCloud2 output ;
 
+    pcl::PassThrough<pcl::PointXYZRGB> pass;
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr colour_cloud(new pcl::PointCloud<pcl::PointXYZRGB>); 
+
+     pcl::PointCloud<pcl::PointXYZRGB>::Ptr colour_cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>);
+
     pcl::PCLPointCloud2 *cloud = new pcl::PCLPointCloud2;
 
     pcl::PCLPointCloud2ConstPtr cloudPtr(cloud);
 
+
+
   
+    pcl_conversions::toPCL(*Point_Cloud,*cloud);    // From ROS to PCL Point Cloud2 
 
-    pcl_conversions::toPCL(*Point_Cloud,*cloud);
-    
-    sor.setInputCloud(cloudPtr);
-    sor.setLeafSize(0.05f,0.05f,0.05f);
-    sor.filter(cloud_filtered);
+    pcl::fromROSMsg(*Point_Cloud,*colour_cloud);     // ROS to POINT XYZRGB PCL Cloud
 
-    
+    pass.setInputCloud(colour_cloud);
 
-    pcl_conversions::fromPCL(cloud_filtered,output);
+    pass.setFilterFieldName("z");
+
+    pass.setFilterLimits(0.70,1.5);
+
+    pass.filter(*colour_cloud_filtered);
+
+    pcl::toROSMsg(*colour_cloud_filtered,output);
+
+
+    // pcl_conversions::fromPCL(cloud_filtered,output);
 
     Pub_Point_Cloud_Data.publish(output);
 }
