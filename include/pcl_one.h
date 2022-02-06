@@ -19,6 +19,7 @@
 #include <pcl/point_types.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <pcl/filters/voxel_grid.h>
 
 
 
@@ -43,15 +44,17 @@ private:
 
 ros::NodeHandle nh_;
 
+ros::Publisher Pub_Point_Cloud_Data;
+
 ros::Subscriber Sub_Point_Cloud_Data ;
 
-void Subscribe_Point_Cloud(const sensor_msgs::PointCloud2 &msg);
+void Subscribe_Point_Cloud(const sensor_msgs::PointCloud2ConstPtr &msg);
 /**
  * @brief Callback for Point Cloud Data
  * 
  */
 
-// void DownSampling_Filter(const sensor_msgs::PointCloud2 Point_Cloud);
+void DownSampling_Filter(const sensor_msgs::PointCloud2ConstPtr  &Point_Cloud);
 /**
  * @brief Downsample the Incoming 
  * 
@@ -61,7 +64,7 @@ void Subscribe_Point_Cloud(const sensor_msgs::PointCloud2 &msg);
 
 
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr _cloud_filtered ;
+pcl::PCLPointCloud2 cloud_filtered ;
 
 
 static pcl::PCLPointCloud2::Ptr cloud_blob ;
@@ -69,7 +72,12 @@ static pcl::PCLPointCloud2::Ptr cloud_blob ;
 
 static pcl::PointCloud<pcl::PointXYZRGB>::Ptr _colour_point_cloud ;
 
-// static pcl::visualization::CloudViewer viewer("Cloud Viewer");
+
+
+
+// Filter
+
+pcl::VoxelGrid<pcl::PCLPointCloud2> sor ;
 
 
 
